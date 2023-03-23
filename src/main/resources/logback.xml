@@ -14,7 +14,7 @@
     </rollingPolicy>
 
     <encoder>
-        <pattern>%d %p %c{1.} [%t] %m%n</pattern>
+        <pattern>%d %p %c{1} [%t] %m%n</pattern>
     </encoder>
     </appender>
     <loger name="io.proj3ct.IT_PointBot" level="debug" additivity="false">
