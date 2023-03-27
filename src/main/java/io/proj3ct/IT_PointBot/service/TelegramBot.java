@@ -2,17 +2,22 @@ package io.proj3ct.IT_PointBot.service;
 
 
 import io.proj3ct.IT_PointBot.config.BotConfig;
+import io.proj3ct.IT_PointBot.model.User;
+import io.proj3ct.IT_PointBot.model.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Array;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +25,10 @@ import java.util.List;
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
-    private static final String HELP_TEXT = "Тут когда нибудь справка о моей работе";
+    @Autowired
+    private UserRepository userRepository;
+
+    private static final String HELP_TEXT = "Тут когда нибудь будет справка о моей работе";
     final BotConfig config;
 
     public TelegramBot(BotConfig config) {
@@ -46,12 +54,35 @@ public class TelegramBot extends TelegramLongPollingBot {
             long chatId = update.getMessage().getChatId();
 
             switch (messageText) {
-                case "/start" ->  startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-
+                case "/start" -> {
+                    startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                    registerUser(update.getMessage());
+                }
                 case "/help" -> sendMessage(chatId, HELP_TEXT);
 
                 default -> sendMessage(chatId, "Простите команда не найдена");
             }
+        }
+
+
+    }
+
+    private void registerUser(Message message) {
+
+        if (userRepository.findById(message.getChatId()).isEmpty()) {
+
+            var chatId = message.getChatId();
+            var chat  = message.getChat();
+            User user = new User();
+
+            user.setChatId(chatId);
+            user.setFirstName(chat.getFirstName());
+            user.setLastName(chat.getLastName());
+            user.setUserName(chat.getUserName());
+            user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
+
+            userRepository.save(user);
+            log.info("user saved: " + user);
         }
 
 
